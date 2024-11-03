@@ -26,13 +26,9 @@ impl ScriptIterator<'_> {
                     self.line += 1;
                     self.index = 0;
                 }
-                ' ' => {
+                _ => {
                     self.index += 1;
                 }
-                '\t' => {
-                    self.index += 1;
-                }
-                _ => {}
             }
         };
     }

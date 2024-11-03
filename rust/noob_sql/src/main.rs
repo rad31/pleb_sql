@@ -1,13 +1,17 @@
-mod lib;
+mod lexical_analyzer;
+mod token;
 
-use lib::lexical_analyzer::LexicalAnalyzer;
-use lib::token::Token;
+use lexical_analyzer::{LexicalAnalyzer, TokenVariant};
+use token::Token;
 
 fn main() {
-    let input = "1 2 3";
+    let input = "12 24 abc 43";
     let mut analyzer = LexicalAnalyzer::new(input);
 
-    while let Some(num) = analyzer.next() {
-        println!("({})", num.get_lexeme())
+    while let Some(token) = analyzer.next() {
+        match token {
+            TokenVariant::Number(t) => println!("{}", t.get_lexeme()),
+            TokenVariant::Identifier(t) => println!("{}", t.get_lexeme()),
+        }
     }
 }
