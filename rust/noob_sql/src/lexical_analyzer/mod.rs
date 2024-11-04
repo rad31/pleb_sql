@@ -1,20 +1,21 @@
 pub mod script_iterator;
 
-use crate::token::{
-    identifier_token::IdentifierToken, integer_literal_token::IntegerLiteralToken,
-    punctuator_token::PunctuatorToken, Token,
+use std::collections::HashMap;
+
+use crate::{
+    keyword::Keyword,
+    punctuator::Punctuator,
+    token::{
+        identifier_token::IdentifierToken, integer_literal_token::IntegerLiteralToken,
+        keyword_token::KeywordToken, punctuator_token::PunctuatorToken, Token, TokenVariant,
+    },
 };
 use script_iterator::ScriptIterator;
-
-pub enum TokenVariant<'a> {
-    IntegerLiteral(IntegerLiteralToken<'a>),
-    Identifier(IdentifierToken<'a>),
-    Punctuator(PunctuatorToken<'a>),
-}
 
 pub struct LexicalAnalyzer<'a> {
     pub input: &'a str,
     pub iterator: ScriptIterator<'a>,
+    pub keywords: HashMap<&'static str, Keyword>,
 }
 
 impl<'a> LexicalAnalyzer<'a> {
@@ -22,6 +23,7 @@ impl<'a> LexicalAnalyzer<'a> {
         LexicalAnalyzer {
             input,
             iterator: ScriptIterator::new(&input),
+            keywords: Keyword::get_map(),
         }
     }
 
@@ -36,19 +38,18 @@ impl<'a> LexicalAnalyzer<'a> {
             self.iterator.next();
         }
 
-        let (index, c) = self.iterator.peek()?;
-        let index = index.clone();
+        let (index, c) = self.iterator.next()?;
 
-        if is_start::<IntegerLiteralToken>(*c) {
+        if is_start::<IntegerLiteralToken>(c) {
             return Some(self.parse_number(index));
         }
 
-        if is_start::<IdentifierToken>(*c) {
-            return Some(self.parse_identifier(index));
+        if is_start::<IdentifierToken>(c) {
+            return Some(self.parse_identifier_or_keyword(index));
         }
 
-        if is_start::<PunctuatorToken>(*c) {
-            return Some(self.parse_punctuator(index));
+        if is_start::<PunctuatorToken>(c) {
+            return Some(self.parse_punctuator(index, c));
         }
 
         panic!(
@@ -74,12 +75,17 @@ impl<'a> LexicalAnalyzer<'a> {
         })
     }
 
-    fn parse_identifier(&mut self, start: usize) -> TokenVariant {
+    fn parse_identifier_or_keyword(&mut self, start: usize) -> TokenVariant {
         while let Some((index, c)) = self.iterator.peek() {
             if !is_continuation::<IdentifierToken>(*c) {
-                return TokenVariant::Identifier(IdentifierToken {
-                    lexeme: &self.input[start..*index],
-                });
+                let lexeme: &str = &self.input[start..*index];
+                if let Some(keyword) = self.keywords.get(lexeme) {
+                    return TokenVariant::Keyword(KeywordToken {
+                        lexeme,
+                        keyword: keyword.clone(),
+                    });
+                }
+                return TokenVariant::Identifier(IdentifierToken { lexeme });
             }
             self.iterator.next();
         }
@@ -91,11 +97,10 @@ impl<'a> LexicalAnalyzer<'a> {
         });
     }
 
-    fn parse_punctuator(&mut self, start: usize) -> TokenVariant {
-        self.iterator.next();
-
+    fn parse_punctuator(&mut self, start: usize, c: char) -> TokenVariant {
         TokenVariant::Punctuator(PunctuatorToken {
             lexeme: &self.input[start..start + 1],
+            punctuator: Punctuator::get(&c).unwrap(),
         })
     }
 }

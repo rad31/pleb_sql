@@ -1,7 +1,10 @@
+use crate::punctuator::Punctuator;
+
 use super::Token;
 
 pub struct PunctuatorToken<'a> {
     pub lexeme: &'a str,
+    pub punctuator: Punctuator,
 }
 
 impl Token for PunctuatorToken<'_> {
@@ -10,12 +13,11 @@ impl Token for PunctuatorToken<'_> {
     }
 
     fn is_start(c: char) -> bool {
-        c == COMMA
-            || c == DOUBLE_QUOTE
-            || c == GLOB
-            || c == PAREN_CLOSE
-            || c == PAREN_OPEN
-            || c == SEMICOLON
+        let result = Punctuator::get(&c);
+        match result {
+            Some(_) => true,
+            None => false,
+        }
     }
 
     fn is_continuation(_: char) -> bool {
@@ -26,10 +28,3 @@ impl Token for PunctuatorToken<'_> {
     //     return TokenVariant::Punctuator(self);
     // }
 }
-
-pub static COMMA: char = ',';
-pub static DOUBLE_QUOTE: char = '"';
-pub static GLOB: char = '*';
-pub static PAREN_CLOSE: char = '(';
-pub static PAREN_OPEN: char = ')';
-pub static SEMICOLON: char = ';';
