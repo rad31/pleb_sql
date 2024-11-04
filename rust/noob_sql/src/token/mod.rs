@@ -1,5 +1,6 @@
 pub mod identifier_token;
-pub mod number_token;
+pub mod integer_literal_token;
+pub mod punctuator_token;
 
 pub trait Token {
     fn get_lexeme(&self) -> &str;

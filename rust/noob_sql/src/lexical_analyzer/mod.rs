@@ -1,11 +1,15 @@
 pub mod script_iterator;
 
-use crate::token::{identifier_token::IdentifierToken, number_token::NumberToken, Token};
+use crate::token::{
+    identifier_token::IdentifierToken, integer_literal_token::IntegerLiteralToken,
+    punctuator_token::PunctuatorToken, Token,
+};
 use script_iterator::ScriptIterator;
 
 pub enum TokenVariant<'a> {
-    Number(NumberToken<'a>),
+    IntegerLiteral(IntegerLiteralToken<'a>),
     Identifier(IdentifierToken<'a>),
+    Punctuator(PunctuatorToken<'a>),
 }
 
 pub struct LexicalAnalyzer<'a> {
@@ -32,14 +36,19 @@ impl<'a> LexicalAnalyzer<'a> {
             self.iterator.next();
         }
 
-        let (_, c) = self.iterator.peek()?;
+        let (index, c) = self.iterator.peek()?;
+        let index = index.clone();
 
-        if is_start::<NumberToken>(*c) {
-            return Some(self.parse_number());
+        if is_start::<IntegerLiteralToken>(*c) {
+            return Some(self.parse_number(index));
         }
 
         if is_start::<IdentifierToken>(*c) {
-            return Some(self.parse_identifier());
+            return Some(self.parse_identifier(index));
+        }
+
+        if is_start::<PunctuatorToken>(*c) {
+            return Some(self.parse_punctuator(index));
         }
 
         panic!(
@@ -48,33 +57,31 @@ impl<'a> LexicalAnalyzer<'a> {
         );
     }
 
-    fn parse_number(&mut self) -> TokenVariant {
-        let (start, _) = self.iterator.next().unwrap();
-
-        while let Some((index, c)) = self.iterator.next() {
-            if !is_continuation::<IdentifierToken>(c) {
-                return TokenVariant::Number(NumberToken {
-                    lexeme: &self.input[start..index],
+    fn parse_number(&mut self, start: usize) -> TokenVariant {
+        while let Some((index, c)) = self.iterator.peek() {
+            if !is_continuation::<IntegerLiteralToken>(*c) {
+                return TokenVariant::IntegerLiteral(IntegerLiteralToken {
+                    lexeme: &self.input[start..*index],
                 });
             }
+            self.iterator.next();
         }
 
         let end = self.input.len();
 
-        TokenVariant::Number(NumberToken {
+        TokenVariant::IntegerLiteral(IntegerLiteralToken {
             lexeme: &self.input[start..end],
         })
     }
 
-    fn parse_identifier(&mut self) -> TokenVariant {
-        let (start, _) = self.iterator.next().unwrap();
-
-        while let Some((index, c)) = self.iterator.next() {
-            if !is_continuation::<IdentifierToken>(c) {
+    fn parse_identifier(&mut self, start: usize) -> TokenVariant {
+        while let Some((index, c)) = self.iterator.peek() {
+            if !is_continuation::<IdentifierToken>(*c) {
                 return TokenVariant::Identifier(IdentifierToken {
-                    lexeme: &self.input[start..index],
+                    lexeme: &self.input[start..*index],
                 });
             }
+            self.iterator.next();
         }
 
         let end = self.input.len();
@@ -82,6 +89,14 @@ impl<'a> LexicalAnalyzer<'a> {
         return TokenVariant::Identifier(IdentifierToken {
             lexeme: &self.input[start..end],
         });
+    }
+
+    fn parse_punctuator(&mut self, start: usize) -> TokenVariant {
+        self.iterator.next();
+
+        TokenVariant::Punctuator(PunctuatorToken {
+            lexeme: &self.input[start..start + 1],
+        })
     }
 }
 

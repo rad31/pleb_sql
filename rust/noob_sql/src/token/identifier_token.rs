@@ -1,4 +1,4 @@
-use crate::token::Token;
+use super::Token;
 
 pub struct IdentifierToken<'a> {
     pub lexeme: &'a str,
@@ -16,4 +16,8 @@ impl Token for IdentifierToken<'_> {
     fn is_continuation(c: char) -> bool {
         c.is_ascii_alphanumeric() || c == '_'
     }
+
+    // fn as_variant(&self) -> TokenVariant<'_> {
+    //     return TokenVariant::Identifier(self);
+    // }
 }
