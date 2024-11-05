@@ -14,13 +14,13 @@ use error::LexingError;
 use inspectable::Inspectable;
 use keyword::Keyword;
 use operator::Operator;
-use punctuator::{Punctuator, DOUBLE_QUOTE};
+use punctuator::Punctuator;
 use script_iterator::ScriptIterator;
 
 use tokens::{
     char_token::CharToken, identifier_token::IdentifierToken, integer_token::IntegerToken,
     keyword_token::KeywordToken, operator_token::OperatorToken, punctuator_token::PunctuatorToken,
-    string_token::StringToken, TokenVariant, CHAR, INVALID, OPERATOR, PUNCTUATOR, STRING,
+    string_token::StringToken, TokenVariant, CHAR, INVALID, OPERATOR, STRING,
 };
 
 pub struct Lexer<'a> {
@@ -77,9 +77,7 @@ impl<'a> Lexer<'a> {
             return Some(self.read_char(index));
         }
 
-        Some(Err(LexingError {
-            message: error_msg(INVALID, self.iterator.line, index),
-        }))
+        Some(Err(LexingError::new(INVALID, self.iterator.line, index)))
     }
 
     fn read_number(&mut self, start: usize) -> TokenVariant {
@@ -138,17 +136,11 @@ impl<'a> Lexer<'a> {
 
         let lexeme: &str = &self.input[start..end];
         match self.operators.get(lexeme) {
-            Some(operator) => {
-                return Ok(TokenVariant::Operator(OperatorToken {
-                    lexeme,
-                    operator: operator.clone(),
-                }))
-            }
-            None => {
-                return Err(LexingError {
-                    message: error_msg(OPERATOR, self.iterator.line, start),
-                })
-            }
+            Some(operator) => Ok(TokenVariant::Operator(OperatorToken {
+                lexeme,
+                operator: operator.clone(),
+            })),
+            None => Err(LexingError::new(OPERATOR, self.iterator.line, start)),
         }
     }
 
@@ -156,9 +148,7 @@ impl<'a> Lexer<'a> {
         let start = start + 1;
         let curr = self.iterator.peek();
         if curr.is_none() {
-            return Err(LexingError {
-                message: error_msg(STRING, self.iterator.line, start),
-            });
+            return Err(LexingError::new(STRING, self.iterator.line, start));
         }
         let (_, curr_char) = curr.unwrap();
 
@@ -173,17 +163,13 @@ impl<'a> Lexer<'a> {
         loop {
             let prev = self.iterator.next();
             if prev.is_none() {
-                return Err(LexingError {
-                    message: error_msg(STRING, self.iterator.line, start),
-                });
+                return Err(LexingError::new(STRING, self.iterator.line, start));
             }
             let (__, prev_char) = prev.unwrap();
 
             let curr = self.iterator.peek();
             if curr.is_none() {
-                return Err(LexingError {
-                    message: error_msg(STRING, self.iterator.line, start),
-                });
+                return Err(LexingError::new(STRING, self.iterator.line, start));
             }
             let (curr_index, curr_char) = curr.unwrap();
 
@@ -200,19 +186,13 @@ impl<'a> Lexer<'a> {
     fn read_char(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
         let start = start + 1;
         let prev = self.iterator.next();
-        if prev.is_none() {
-            return Err(LexingError {
-                message: error_msg(CHAR, self.iterator.line, start),
-            });
-        }
-        let (_, prev_char) = prev.unwrap();
-
         let curr = self.iterator.peek();
-        if curr.is_none() {
-            return Err(LexingError {
-                message: error_msg(CHAR, self.iterator.line, start),
-            });
+
+        if prev.is_none() || curr.is_none() {
+            return Err(LexingError::new(CHAR, self.iterator.line, start));
         }
+
+        let (_, prev_char) = prev.unwrap();
         let (curr_index, curr_char) = curr.unwrap();
 
         if curr_char.terminates::<CharToken>(Some(prev_char)) {
@@ -223,15 +203,6 @@ impl<'a> Lexer<'a> {
             return Ok(variant);
         }
 
-        Err(LexingError {
-            message: error_msg(CHAR, self.iterator.line, start),
-        })
+        Err(LexingError::new(CHAR, self.iterator.line, start))
     }
-}
-
-fn error_msg(variant: &str, line: usize, index: usize) -> String {
-    format!(
-        "Invalid {}Token at line {}, position {}",
-        variant, line, index
-    )
 }

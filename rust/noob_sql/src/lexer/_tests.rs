@@ -1,13 +1,11 @@
 use crate::lexer::Lexer;
 
-use super::{keyword::Keyword, operator::Operator, punctuator::Punctuator, tokens::TokenVariant};
-
-fn assert_error(input: &str) {
-    let mut lexer = Lexer::new(input);
-    let token = lexer.next();
-    assert!(token.is_some());
-    assert!(token.unwrap().is_err());
-}
+use super::{
+    keyword::Keyword,
+    operator::Operator,
+    punctuator::Punctuator,
+    tokens::{TokenVariant, CHAR, OPERATOR, STRING},
+};
 
 #[test]
 fn read_integer_success() {
@@ -36,13 +34,25 @@ fn read_char_success() {
 #[test]
 fn read_char_error_no_closing_quote() {
     let input = "'a";
-    assert_error(input);
+    let mut lexer = Lexer::new(input);
+    let token = lexer.next();
+
+    match token.unwrap() {
+        Ok(_) => panic!(),
+        Err(err) => assert_eq!(err.variant, CHAR),
+    }
 }
 
 #[test]
 fn read_char_error_char_too_long() {
     let input = "'aa'";
-    assert_error(input);
+    let mut lexer = Lexer::new(input);
+    let token = lexer.next();
+
+    match token.unwrap() {
+        Ok(_) => panic!(),
+        Err(err) => assert_eq!(err.variant, CHAR),
+    }
 }
 
 #[test]
@@ -72,7 +82,13 @@ fn read_string_success_empty_string() {
 #[test]
 fn read_string_error_no_closing_quote() {
     let input = "\"abc";
-    assert_error(input);
+    let mut lexer = Lexer::new(input);
+    let token = lexer.next();
+
+    match token.unwrap() {
+        Ok(_) => panic!(),
+        Err(err) => assert_eq!(err.variant, STRING),
+    }
 }
 
 #[test]
@@ -110,6 +126,30 @@ fn read_operator_success() {
             TokenVariant::Operator(inner) => assert_eq!(inner.lexeme, *operator),
             _ => panic!("{}", operator),
         }
+    }
+}
+
+#[test]
+fn read_operator_error_terminated_early() {
+    let operator = "<";
+    let mut lexer = Lexer::new(operator);
+    let token = lexer.next();
+
+    match token.unwrap() {
+        Err(err) => assert_eq!(err.variant, OPERATOR),
+        Ok(_) => panic!(),
+    }
+}
+
+#[test]
+fn read_operator_error_does_not_exist() {
+    let operator = "=>";
+    let mut lexer = Lexer::new(operator);
+    let token = lexer.next();
+
+    match token.unwrap() {
+        Err(err) => assert_eq!(err.variant, OPERATOR),
+        Ok(_) => panic!(),
     }
 }
 
