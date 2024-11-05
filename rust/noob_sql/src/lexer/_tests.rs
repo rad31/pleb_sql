@@ -162,7 +162,23 @@ fn read_punctuator_success() {
 
         match token.unwrap().unwrap() {
             TokenVariant::Punctuator(inner) => assert_eq!(inner.lexeme, *punctuator),
-            _ => panic!("{}", punctuator),
+            _ => panic!(),
+        }
+    }
+}
+
+#[test]
+fn read_sql_command_success() {
+    let commands = [
+        "create table table_name(col_1 int primary key, col_2 bool, col_3 varchar(8));",
+        "insert into table_name values(0, true, \"abcdefgh\");",
+        "select * from table_name where col_1 = 0;",
+        "update table_name set col_3 = \"hgfedcba\" where col_1 = 0;",
+    ];
+    for commmand in commands {
+        let mut lexer = Lexer::new(commmand);
+        while let Some(token) = lexer.next() {
+            assert!(token.is_ok());
         }
     }
 }

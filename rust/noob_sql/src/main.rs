@@ -6,7 +6,7 @@ use lexer::Lexer;
 fn main() {
     // let input = "int '12 (24) \"abc\\\"\" = 43; '_' 't' '\''";
     // let input = "create 'aa' table people(name varchar(2) primary key, age int);";
-    let input = "=";
+    let input = "= ";
     let mut lexer = Lexer::new(input);
 
     while let Some(token) = lexer.next() {

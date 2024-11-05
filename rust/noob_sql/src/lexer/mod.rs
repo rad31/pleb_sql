@@ -127,10 +127,10 @@ impl<'a> Lexer<'a> {
     fn read_operator(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
         let mut end = start + 1;
         while let Some((_, c)) = self.iterator.peek() {
-            end += 1;
             if c.terminates::<OperatorToken>(None) {
                 break;
             }
+            end += 1;
             self.iterator.next();
         }
 
