@@ -1,5 +1,8 @@
 use std::{iter::Peekable, str::CharIndices};
 
+#[cfg(test)]
+mod _tests;
+
 pub struct ScriptIterator<'a> {
     pub line: usize,
     pub index: usize,

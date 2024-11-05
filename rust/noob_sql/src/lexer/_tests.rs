@@ -1,11 +1,6 @@
 use crate::lexer::Lexer;
 
-use super::{
-    keyword::Keyword,
-    operator::Operator,
-    punctuator::{self, Punctuator},
-    tokens::TokenVariant,
-};
+use super::{keyword::Keyword, operator::Operator, punctuator::Punctuator, tokens::TokenVariant};
 
 fn assert_error(input: &str) {
     let mut lexer = Lexer::new(input);
