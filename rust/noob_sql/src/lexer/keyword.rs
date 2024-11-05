@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Keyword {
     Create,
     Table,
@@ -52,22 +52,22 @@ impl Keyword {
     }
 }
 
-pub static CREATE: &str = "create";
-pub static TABLE: &str = "table";
-pub static PRIMARY: &str = "primary";
-pub static FOREIGN: &str = "foreign";
-pub static KEY: &str = "key";
-pub static INSERT: &str = "insert";
-pub static INTO: &str = "into";
-pub static VALUES: &str = "values";
-pub static SELECT: &str = "select";
-pub static FROM: &str = "from";
-pub static UPDATE: &str = "update";
-pub static SET: &str = "set";
-pub static WHERE: &str = "where";
-pub static AND: &str = "and";
-pub static OR: &str = "or";
-pub static BOOL: &str = "bool";
-pub static INT: &str = "int";
-pub static CHAR: &str = "char";
-pub static VARCHAR: &str = "varchar";
+pub const CREATE: &str = "create";
+pub const TABLE: &str = "table";
+pub const PRIMARY: &str = "primary";
+pub const FOREIGN: &str = "foreign";
+pub const KEY: &str = "key";
+pub const INSERT: &str = "insert";
+pub const INTO: &str = "into";
+pub const VALUES: &str = "values";
+pub const SELECT: &str = "select";
+pub const FROM: &str = "from";
+pub const UPDATE: &str = "update";
+pub const SET: &str = "set";
+pub const WHERE: &str = "where";
+pub const AND: &str = "and";
+pub const OR: &str = "or";
+pub const BOOL: &str = "bool";
+pub const INT: &str = "int";
+pub const CHAR: &str = "char";
+pub const VARCHAR: &str = "varchar";

@@ -1,7 +1,8 @@
-use crate::punctuator::Punctuator;
+use crate::lexer::punctuator::Punctuator;
 
 use super::Token;
 
+#[derive(Debug)]
 pub struct PunctuatorToken<'a> {
     pub lexeme: &'a str,
     pub punctuator: Punctuator,
@@ -20,11 +21,7 @@ impl Token for PunctuatorToken<'_> {
         }
     }
 
-    fn is_continuation(_: char) -> bool {
-        false
+    fn is_end(_: char, _: Option<char>) -> bool {
+        true
     }
-
-    // fn as_variant(&self) -> TokenVariant<'_> {
-    //     return TokenVariant::Punctuator(self);
-    // }
 }

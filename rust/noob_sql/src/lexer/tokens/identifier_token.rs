@@ -1,5 +1,6 @@
 use super::Token;
 
+#[derive(Debug)]
 pub struct IdentifierToken<'a> {
     pub lexeme: &'a str,
 }
@@ -13,11 +14,7 @@ impl Token for IdentifierToken<'_> {
         c.is_ascii_alphabetic()
     }
 
-    fn is_continuation(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_'
+    fn is_end(c: char, _: Option<char>) -> bool {
+        !c.is_ascii_alphanumeric() && c != '_'
     }
-
-    // fn as_variant(&self) -> TokenVariant<'_> {
-    //     return TokenVariant::Identifier(self);
-    // }
 }
