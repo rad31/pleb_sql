@@ -12,13 +12,14 @@ fn main() {
     while let Some(token) = lexer.next() {
         match token {
             Ok(token) => match token {
-                TokenVariant::Char(t) => println!("Char {}", t.get_lexeme()),
-                TokenVariant::Integer(t) => println!("Integer {}", t.get_lexeme()),
-                TokenVariant::Identifier(t) => println!("Identifier {}", t.get_lexeme()),
-                TokenVariant::Keyword(t) => println!("Keyword {}", t.get_lexeme()),
-                TokenVariant::Operator(t) => println!("Operator {}", t.get_lexeme()),
-                TokenVariant::Punctuator(t) => println!("Punctuator {}", t.get_lexeme()),
-                TokenVariant::String(t) => println!("String {}", t.get_lexeme()),
+                TokenVariant::Bool(t) => println!("Bool {}", t.value),
+                TokenVariant::Char(t) => println!("Char {}", t.value),
+                TokenVariant::Integer(t) => println!("Integer {}", t.value),
+                TokenVariant::Identifier(t) => println!("Identifier {}", t.value),
+                TokenVariant::Keyword(t) => println!("Keyword {}", t.value),
+                TokenVariant::Operator(t) => println!("Operator {}", t.value),
+                TokenVariant::Punctuator(t) => println!("Punctuator {}", t.value),
+                TokenVariant::String(t) => println!("String {}", t.value),
             },
             Err(err) => panic!("{}", err),
         }

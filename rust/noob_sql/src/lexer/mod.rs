@@ -2,32 +2,34 @@
 mod _tests;
 pub mod error;
 mod inspectable;
-pub mod keyword;
-pub mod operator;
-pub mod punctuator;
 mod script_iterator;
+pub mod symbols;
 pub mod tokens;
 
 use std::collections::HashMap;
 
 use error::LexingError;
 use inspectable::Inspectable;
-use keyword::Keyword;
-use operator::Operator;
-use punctuator::Punctuator;
 use script_iterator::ScriptIterator;
 
 use tokens::{
-    char_token::CharToken, identifier_token::IdentifierToken, integer_token::IntegerToken,
-    keyword_token::KeywordToken, operator_token::OperatorToken, punctuator_token::PunctuatorToken,
-    string_token::StringToken, TokenVariant, CHAR, INVALID, OPERATOR, STRING,
+    bool_token::{BoolToken, FALSE, TRUE},
+    char_token::CharToken,
+    identifier_token::IdentifierToken,
+    integer_token::IntegerToken,
+    keyword_token::{Keyword, KeywordToken},
+    operator_token::{Operator, OperatorToken},
+    punctuator_token::{Punctuator, PunctuatorToken},
+    string_token::StringToken,
+    Token, TokenVariant, CHAR, INTEGER, INVALID, OPERATOR, PUNCTUATOR, STRING,
 };
 
 pub struct Lexer<'a> {
-    pub input: &'a str,
-    pub iterator: ScriptIterator<'a>,
-    pub keywords: HashMap<&'static str, Keyword>,
-    pub operators: HashMap<&'static str, Operator>,
+    input: &'a str,
+    iterator: ScriptIterator<'a>,
+    keywords: HashMap<&'static str, Keyword>,
+    operators: HashMap<&'static str, Operator>,
+    punctuators: HashMap<&'static str, Punctuator>,
 }
 
 impl<'a> Lexer<'a> {
@@ -35,8 +37,9 @@ impl<'a> Lexer<'a> {
         Lexer {
             input,
             iterator: ScriptIterator::new(&input),
-            keywords: Keyword::get_map(),
-            operators: Operator::get_map(),
+            keywords: KeywordToken::get_map(),
+            operators: OperatorToken::get_map(),
+            punctuators: PunctuatorToken::get_map(),
         }
     }
 
@@ -54,15 +57,19 @@ impl<'a> Lexer<'a> {
         let (index, c) = self.iterator.next()?;
 
         if c.starts::<IntegerToken>() {
-            return Some(Ok(self.read_number(index)));
+            return Some(self.read_number(index));
         }
 
         if c.starts::<PunctuatorToken>() {
-            return Some(Ok(self.read_punctuator(index, c)));
+            return Some(self.read_punctuator(index));
+        }
+
+        if c.starts::<KeywordToken>() {
+            return Some(Ok(self.read_word(index)));
         }
 
         if c.starts::<IdentifierToken>() {
-            return Some(Ok(self.read_identifier_or_keyword(index)));
+            return Some(Ok(self.read_identifier(index)));
         }
 
         if c.starts::<OperatorToken>() {
@@ -77,69 +84,76 @@ impl<'a> Lexer<'a> {
             return Some(self.read_char(index));
         }
 
+        // TODO: parse BoolToken
+
         Some(Err(LexingError::new(INVALID, self.iterator.line, index)))
     }
 
-    fn read_number(&mut self, start: usize) -> TokenVariant {
-        while let Some((index, c)) = self.iterator.peek() {
-            if c.terminates::<IntegerToken>(None) {
-                return TokenVariant::Integer(IntegerToken {
-                    lexeme: &self.input[start..*index],
-                });
+    fn read_number(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
+        let end = self.read_until_end::<IntegerToken>(start + 1);
+
+        let lexeme = &self.input[start..end];
+        match lexeme.parse::<i32>() {
+            Ok(value) => Ok(TokenVariant::Integer(IntegerToken { value })),
+            Err(_) => Err(LexingError::new(INTEGER, self.iterator.line, start)),
+        }
+    }
+
+    fn read_punctuator(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
+        let lexeme = &self.input[start..start + 1];
+        let punctuator = self.punctuators.get(lexeme);
+
+        match punctuator {
+            Some(value) => Ok(TokenVariant::Punctuator(PunctuatorToken { value: *value })),
+            None => Err(LexingError::new(PUNCTUATOR, self.iterator.line, start)),
+        }
+    }
+
+    fn read_word(&mut self, start: usize) -> TokenVariant {
+        let mut end = start + 1;
+        let mut is_identifier = false;
+
+        while let Some((_, c)) = self.iterator.peek() {
+            if c.terminates::<KeywordToken>(None) {
+                is_identifier = !c.terminates::<IdentifierToken>(None);
+                break;
             }
+            end += 1;
             self.iterator.next();
         }
 
-        let end = self.input.len();
-
-        TokenVariant::Integer(IntegerToken {
-            lexeme: &self.input[start..end],
-        })
-    }
-
-    fn read_punctuator(&mut self, start: usize, c: char) -> TokenVariant {
-        TokenVariant::Punctuator(PunctuatorToken {
-            lexeme: &self.input[start..start + 1],
-            punctuator: Punctuator::get(&c).unwrap(),
-        })
-    }
-
-    fn read_identifier_or_keyword(&mut self, start: usize) -> TokenVariant {
-        let mut end = start + 1;
-        while let Some((_, c)) = self.iterator.peek() {
-            end += 1;
-            if c.terminates::<IdentifierToken>(None) {
-                break;
-            }
-            self.iterator.next();
+        if is_identifier {
+            end = self.read_until_end::<IdentifierToken>(end);
+            let lexeme: &str = &self.input[start..end];
+            return TokenVariant::Identifier(IdentifierToken { value: lexeme });
         }
 
         let lexeme: &str = &self.input[start..end];
-        match self.keywords.get(lexeme) {
-            Some(keyword) => TokenVariant::Keyword(KeywordToken {
-                lexeme,
-                keyword: keyword.clone(),
-            }),
-            None => TokenVariant::Identifier(IdentifierToken { lexeme }),
+
+        if let Some(keyword) = self.keywords.get(lexeme) {
+            return TokenVariant::Keyword(KeywordToken { value: *keyword });
         }
+
+        if lexeme == TRUE || lexeme == FALSE {
+            return TokenVariant::Bool(BoolToken {
+                value: BoolToken::value(lexeme),
+            });
+        }
+
+        TokenVariant::Identifier(IdentifierToken { value: lexeme })
+    }
+
+    fn read_identifier(&mut self, start: usize) -> TokenVariant {
+        let end = self.read_until_end::<IdentifierToken>(start + 1);
+        let lexeme: &str = &self.input[start..end];
+        TokenVariant::Identifier(IdentifierToken { value: lexeme })
     }
 
     fn read_operator(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
-        let mut end = start + 1;
-        while let Some((_, c)) = self.iterator.peek() {
-            if c.terminates::<OperatorToken>(None) {
-                break;
-            }
-            end += 1;
-            self.iterator.next();
-        }
-
+        let end = self.read_until_end::<OperatorToken>(start + 1);
         let lexeme: &str = &self.input[start..end];
         match self.operators.get(lexeme) {
-            Some(operator) => Ok(TokenVariant::Operator(OperatorToken {
-                lexeme,
-                operator: operator.clone(),
-            })),
+            Some(operator) => Ok(TokenVariant::Operator(OperatorToken { value: *operator })),
             None => Err(LexingError::new(OPERATOR, self.iterator.line, start)),
         }
     }
@@ -154,7 +168,7 @@ impl<'a> Lexer<'a> {
 
         if curr_char.terminates::<StringToken>(Some(c)) {
             let variant = TokenVariant::String(StringToken {
-                lexeme: &self.input[start..start],
+                value: &self.input[start..start],
             });
             self.iterator.next();
             return Ok(variant);
@@ -175,7 +189,7 @@ impl<'a> Lexer<'a> {
 
             if curr_char.terminates::<StringToken>(Some(prev_char)) {
                 let variant = TokenVariant::String(StringToken {
-                    lexeme: &self.input[start..*curr_index],
+                    value: &self.input[start..*curr_index],
                 });
                 self.iterator.next();
                 return Ok(variant);
@@ -193,16 +207,26 @@ impl<'a> Lexer<'a> {
         }
 
         let (_, prev_char) = prev.unwrap();
-        let (curr_index, curr_char) = curr.unwrap();
+        let (_, curr_char) = curr.unwrap();
 
         if curr_char.terminates::<CharToken>(Some(prev_char)) {
-            let variant = TokenVariant::Char(CharToken {
-                lexeme: &self.input[start..*curr_index],
-            });
+            let variant = TokenVariant::Char(CharToken { value: prev_char });
             self.iterator.next();
             return Ok(variant);
         }
 
         Err(LexingError::new(CHAR, self.iterator.line, start))
+    }
+
+    pub fn read_until_end<T: Token>(&mut self, start: usize) -> usize {
+        let mut end = start;
+        while let Some((_, c)) = self.iterator.peek() {
+            if c.terminates::<T>(None) {
+                break;
+            }
+            end += 1;
+            self.iterator.next();
+        }
+        end
     }
 }

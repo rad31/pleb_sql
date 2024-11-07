@@ -1,17 +1,15 @@
+use crate::lexer::symbols::SUBTRACT;
+
 use super::Token;
 
 #[derive(Debug)]
-pub struct IntegerToken<'a> {
-    pub lexeme: &'a str,
+pub struct IntegerToken {
+    pub value: i32,
 }
 
-impl Token for IntegerToken<'_> {
-    fn get_lexeme(&self) -> &str {
-        self.lexeme
-    }
-
+impl Token for IntegerToken {
     fn is_start(c: char) -> bool {
-        c.is_ascii_digit()
+        c.is_ascii_digit() || c == SUBTRACT
     }
 
     fn is_end(c: char, _: Option<char>) -> bool {

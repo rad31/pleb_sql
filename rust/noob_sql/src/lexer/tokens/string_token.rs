@@ -1,17 +1,13 @@
-use crate::lexer::punctuator::{BACK_SLASH, DOUBLE_QUOTE};
+use crate::lexer::symbols::{BACK_SLASH, DOUBLE_QUOTE};
 
 use super::Token;
 
 #[derive(Debug)]
 pub struct StringToken<'a> {
-    pub lexeme: &'a str,
+    pub value: &'a str,
 }
 
 impl Token for StringToken<'_> {
-    fn get_lexeme(&self) -> &str {
-        self.lexeme
-    }
-
     fn is_start(c: char) -> bool {
         c == DOUBLE_QUOTE
     }

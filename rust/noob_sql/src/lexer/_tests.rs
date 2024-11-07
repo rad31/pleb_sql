@@ -1,10 +1,8 @@
 use crate::lexer::Lexer;
 
-use super::{
-    keyword::Keyword,
-    operator::Operator,
-    punctuator::Punctuator,
-    tokens::{TokenVariant, CHAR, OPERATOR, STRING},
+use super::tokens::{
+    keyword_token::KeywordToken, operator_token::OperatorToken, punctuator_token::PunctuatorToken,
+    TokenVariant, CHAR, OPERATOR, STRING,
 };
 
 #[test]
@@ -14,7 +12,19 @@ fn read_integer_success() {
     let token = lexer.next();
 
     match token.unwrap().unwrap() {
-        TokenVariant::Integer(inner) => assert_eq!(inner.lexeme, input),
+        TokenVariant::Integer(inner) => assert_eq!(inner.value, 123),
+        _ => panic!(),
+    }
+}
+
+#[test]
+fn read_integer_success_negative() {
+    let input = "-123";
+    let mut lexer = Lexer::new(input);
+    let token = lexer.next();
+
+    match token.unwrap().unwrap() {
+        TokenVariant::Integer(inner) => assert_eq!(inner.value, -123),
         _ => panic!(),
     }
 }
@@ -26,7 +36,7 @@ fn read_char_success() {
     let token = lexer.next();
 
     match token.unwrap().unwrap() {
-        TokenVariant::Char(inner) => assert_eq!(inner.lexeme, "a"),
+        TokenVariant::Char(inner) => assert_eq!(inner.value, 'a'),
         _ => panic!(),
     }
 }
@@ -62,7 +72,7 @@ fn read_string_success() {
     let token = lexer.next();
 
     match token.unwrap().unwrap() {
-        TokenVariant::String(inner) => assert_eq!(inner.lexeme, "abc"),
+        TokenVariant::String(inner) => assert_eq!(inner.value, "abc"),
         _ => panic!(),
     }
 }
@@ -74,7 +84,7 @@ fn read_string_success_empty_string() {
     let token = lexer.next();
 
     match token.unwrap().unwrap() {
-        TokenVariant::String(inner) => assert_eq!(inner.lexeme, ""),
+        TokenVariant::String(inner) => assert_eq!(inner.value, ""),
         _ => panic!(),
     }
 }
@@ -98,19 +108,31 @@ fn read_identifier_success() {
     let token = lexer.next();
 
     match token.unwrap().unwrap() {
-        TokenVariant::Identifier(inner) => assert_eq!(inner.lexeme, input),
+        TokenVariant::Identifier(inner) => assert_eq!(inner.value, input),
+        _ => panic!(),
+    }
+}
+
+#[test]
+fn read_identifier_success_keyword_as_substring() {
+    let input = "int_name";
+    let mut lexer = Lexer::new(input);
+    let token = lexer.next();
+
+    match token.unwrap().unwrap() {
+        TokenVariant::Identifier(inner) => assert_eq!(inner.value, input),
         _ => panic!(),
     }
 }
 
 #[test]
 fn read_keyword_success() {
-    for keyword in Keyword::get_map().keys() {
+    for (keyword, value) in KeywordToken::get_map().iter() {
         let mut lexer = Lexer::new(keyword);
         let token = lexer.next();
 
         match token.unwrap().unwrap() {
-            TokenVariant::Keyword(inner) => assert_eq!(inner.lexeme, *keyword),
+            TokenVariant::Keyword(inner) => assert_eq!(inner.value, *value),
             _ => panic!(),
         }
     }
@@ -118,26 +140,14 @@ fn read_keyword_success() {
 
 #[test]
 fn read_operator_success() {
-    for operator in Operator::get_map().keys() {
+    for (operator, value) in OperatorToken::get_map().iter() {
         let mut lexer = Lexer::new(operator);
         let token = lexer.next();
 
-        match token.unwrap().unwrap() {
-            TokenVariant::Operator(inner) => assert_eq!(inner.lexeme, *operator),
+        match token.unwrap().expect(operator) {
+            TokenVariant::Operator(inner) => assert_eq!(inner.value, *value),
             _ => panic!("{}", operator),
         }
-    }
-}
-
-#[test]
-fn read_operator_error_terminated_early() {
-    let operator = "<";
-    let mut lexer = Lexer::new(operator);
-    let token = lexer.next();
-
-    match token.unwrap() {
-        Err(err) => assert_eq!(err.variant, OPERATOR),
-        Ok(_) => panic!(),
     }
 }
 
@@ -149,19 +159,32 @@ fn read_operator_error_does_not_exist() {
 
     match token.unwrap() {
         Err(err) => assert_eq!(err.variant, OPERATOR),
-        Ok(_) => panic!(),
+        Ok(o) => panic!("{}", o),
     }
 }
 
 #[test]
 fn read_punctuator_success() {
-    for punctuator in Punctuator::list() {
+    for (punctuator, value) in PunctuatorToken::get_map().iter() {
         let punctuator = &punctuator.to_string();
         let mut lexer = Lexer::new(punctuator);
         let token = lexer.next();
 
         match token.unwrap().unwrap() {
-            TokenVariant::Punctuator(inner) => assert_eq!(inner.lexeme, *punctuator),
+            TokenVariant::Punctuator(inner) => assert_eq!(inner.value, *value),
+            _ => panic!(),
+        }
+    }
+}
+
+#[test]
+fn read_bool_success() {
+    for (lexeme, value) in [("true", true), ("false", false)].iter() {
+        let mut lexer = Lexer::new(lexeme);
+        let token = lexer.next();
+
+        match token.unwrap().unwrap() {
+            TokenVariant::Bool(inner) => assert_eq!(inner.value, *value),
             _ => panic!(),
         }
     }
