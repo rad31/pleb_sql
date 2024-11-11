@@ -16,6 +16,8 @@ pub const BACK_SLASH: char = '\\';
 pub const SINGLE_QUOTE: char = '\'';
 pub const DOUBLE_QUOTE: char = '"';
 
+pub const NULL_BYTE: u8 = 0;
+
 pub const UNDERSCORE: char = '_';
 
 pub fn ending(c: &char) -> bool {

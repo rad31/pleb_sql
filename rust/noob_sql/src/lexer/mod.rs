@@ -1,6 +1,6 @@
+pub mod _error;
 #[cfg(test)]
 mod _tests;
-pub mod error;
 mod inspectable;
 mod script_iterator;
 pub mod symbols;
@@ -8,9 +8,11 @@ pub mod tokens;
 
 use std::collections::HashMap;
 
-use error::LexingError;
 use inspectable::Inspectable;
 use script_iterator::ScriptIterator;
+
+pub type Error = _error::LexingError;
+pub type Result<T> = core::result::Result<T, Error>;
 
 use tokens::{
     bool_token::{BoolToken, FALSE, TRUE},
@@ -21,7 +23,7 @@ use tokens::{
     operator_token::{Operator, OperatorToken},
     punctuator_token::{Punctuator, PunctuatorToken},
     string_token::StringToken,
-    Token, TokenVariant, CHAR, INTEGER, INVALID, OPERATOR, PUNCTUATOR, STRING,
+    Token, TokenVariant, CHAR, INVALID, OPERATOR, PUNCTUATOR, STRING,
 };
 
 pub struct Lexer<'a> {
@@ -43,7 +45,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next(&mut self) -> Option<Result<TokenVariant, LexingError>> {
+    pub fn next(&mut self) -> Option<Result<TokenVariant>> {
         loop {
             let (_, c) = self.iterator.peek()?;
 
@@ -86,7 +88,7 @@ impl<'a> Lexer<'a> {
 
         // TODO: parse BoolToken
 
-        Some(Err(LexingError::new(INVALID, self.iterator.line, index)))
+        Some(Err(Error::new(INVALID, self.iterator.line, index)))
     }
 
     fn read_number(&mut self, start: usize) -> TokenVariant {
@@ -96,13 +98,13 @@ impl<'a> Lexer<'a> {
         TokenVariant::Integer(IntegerToken { value })
     }
 
-    fn read_punctuator(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
+    fn read_punctuator(&mut self, start: usize) -> Result<TokenVariant> {
         let lexeme = &self.input[start..start + 1];
         let punctuator = self.punctuators.get(lexeme);
 
         match punctuator {
             Some(value) => Ok(TokenVariant::Punctuator(PunctuatorToken { value: *value })),
-            None => Err(LexingError::new(PUNCTUATOR, self.iterator.line, start)),
+            None => Err(Error::new(PUNCTUATOR, self.iterator.line, start)),
         }
     }
 
@@ -146,20 +148,20 @@ impl<'a> Lexer<'a> {
         TokenVariant::Identifier(IdentifierToken { value: lexeme })
     }
 
-    fn read_operator(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
+    fn read_operator(&mut self, start: usize) -> Result<TokenVariant> {
         let end = self.read_until_end::<OperatorToken>(start + 1);
         let lexeme: &str = &self.input[start..end];
         match self.operators.get(lexeme) {
             Some(operator) => Ok(TokenVariant::Operator(OperatorToken { value: *operator })),
-            None => Err(LexingError::new(OPERATOR, self.iterator.line, start)),
+            None => Err(Error::new(OPERATOR, self.iterator.line, start)),
         }
     }
 
-    fn read_string(&mut self, start: usize, c: char) -> Result<TokenVariant, LexingError> {
+    fn read_string(&mut self, start: usize, c: char) -> Result<TokenVariant> {
         let start = start + 1;
         let curr = self.iterator.peek();
         if curr.is_none() {
-            return Err(LexingError::new(STRING, self.iterator.line, start));
+            return Err(Error::new(STRING, self.iterator.line, start));
         }
         let (_, curr_char) = curr.unwrap();
 
@@ -174,13 +176,13 @@ impl<'a> Lexer<'a> {
         loop {
             let prev = self.iterator.next();
             if prev.is_none() {
-                return Err(LexingError::new(STRING, self.iterator.line, start));
+                return Err(Error::new(STRING, self.iterator.line, start));
             }
             let (__, prev_char) = prev.unwrap();
 
             let curr = self.iterator.peek();
             if curr.is_none() {
-                return Err(LexingError::new(STRING, self.iterator.line, start));
+                return Err(Error::new(STRING, self.iterator.line, start));
             }
             let (curr_index, curr_char) = curr.unwrap();
 
@@ -194,13 +196,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn read_char(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
+    fn read_char(&mut self, start: usize) -> Result<TokenVariant> {
         let start = start + 1;
         let prev = self.iterator.next();
         let curr = self.iterator.peek();
 
         if prev.is_none() || curr.is_none() {
-            return Err(LexingError::new(CHAR, self.iterator.line, start));
+            return Err(Error::new(CHAR, self.iterator.line, start));
         }
 
         let (_, prev_char) = prev.unwrap();
@@ -212,7 +214,7 @@ impl<'a> Lexer<'a> {
             return Ok(variant);
         }
 
-        Err(LexingError::new(CHAR, self.iterator.line, start))
+        Err(Error::new(CHAR, self.iterator.line, start))
     }
 
     pub fn read_until_end<T: Token>(&mut self, start: usize) -> usize {

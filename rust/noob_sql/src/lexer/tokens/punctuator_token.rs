@@ -39,8 +39,8 @@ impl Token for PunctuatorToken {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Punctuator {
     Comma,
-    ParenClose,
     ParenOpen,
+    ParenClose,
     Semicolon,
 }
 
@@ -48,8 +48,8 @@ impl std::fmt::Display for Punctuator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let value = match self {
             Punctuator::Comma => COMMA,
-            Punctuator::ParenClose => PAREN_CLOSE,
             Punctuator::ParenOpen => PAREN_OPEN,
+            Punctuator::ParenClose => PAREN_CLOSE,
             Punctuator::Semicolon => SEMICOLON,
         };
         write!(f, "{}", value)
@@ -57,6 +57,6 @@ impl std::fmt::Display for Punctuator {
 }
 
 pub const COMMA: &str = ",";
-pub const PAREN_CLOSE: &str = "(";
-pub const PAREN_OPEN: &str = ")";
+pub const PAREN_OPEN: &str = "(";
+pub const PAREN_CLOSE: &str = ")";
 pub const SEMICOLON: &str = ";";
