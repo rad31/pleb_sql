@@ -13,8 +13,8 @@ impl OperatorToken {
     pub fn get_map() -> HashMap<&'static str, Operator> {
         [
             (ADD, Operator::Add),
-            // (SUBTRACT, Operator::Subtract), // TODO: fix bug
-            // (MULTIPLY, Operator::Multiply), // TODO: fix bug
+            (SUBTRACT, Operator::Subtract),
+            (MULTIPLY, Operator::Multiply),
             (DIVIDE, Operator::Divide),
             (EQUAL, Operator::Equal),
             (NOT_EQUAL, Operator::NotEqual),

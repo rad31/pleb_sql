@@ -11,7 +11,7 @@ pub mod string_token;
 pub enum TokenVariant<'a> {
     Bool(bool_token::BoolToken),
     Char(char_token::CharToken),
-    Integer(integer_token::IntegerToken),
+    Integer(integer_token::IntegerToken<'a>),
     Identifier(identifier_token::IdentifierToken<'a>),
     Keyword(keyword_token::KeywordToken),
     Operator(operator_token::OperatorToken),

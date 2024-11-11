@@ -12,19 +12,7 @@ fn read_integer_success() {
     let token = lexer.next();
 
     match token.unwrap().unwrap() {
-        TokenVariant::Integer(inner) => assert_eq!(inner.value, 123),
-        _ => panic!(),
-    }
-}
-
-#[test]
-fn read_integer_success_negative() {
-    let input = "-123";
-    let mut lexer = Lexer::new(input);
-    let token = lexer.next();
-
-    match token.unwrap().unwrap() {
-        TokenVariant::Integer(inner) => assert_eq!(inner.value, -123),
+        TokenVariant::Integer(inner) => assert_eq!(inner.value, "123"),
         _ => panic!(),
     }
 }

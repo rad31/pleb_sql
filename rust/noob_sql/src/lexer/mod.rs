@@ -57,7 +57,7 @@ impl<'a> Lexer<'a> {
         let (index, c) = self.iterator.next()?;
 
         if c.starts::<IntegerToken>() {
-            return Some(self.read_number(index));
+            return Some(Ok(self.read_number(index)));
         }
 
         if c.starts::<PunctuatorToken>() {
@@ -89,14 +89,11 @@ impl<'a> Lexer<'a> {
         Some(Err(LexingError::new(INVALID, self.iterator.line, index)))
     }
 
-    fn read_number(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
+    fn read_number(&mut self, start: usize) -> TokenVariant {
         let end = self.read_until_end::<IntegerToken>(start + 1);
 
-        let lexeme = &self.input[start..end];
-        match lexeme.parse::<i32>() {
-            Ok(value) => Ok(TokenVariant::Integer(IntegerToken { value })),
-            Err(_) => Err(LexingError::new(INTEGER, self.iterator.line, start)),
-        }
+        let value = &self.input[start..end];
+        TokenVariant::Integer(IntegerToken { value })
     }
 
     fn read_punctuator(&mut self, start: usize) -> Result<TokenVariant, LexingError> {
