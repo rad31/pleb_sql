@@ -1,7 +1,4 @@
-use column::Column;
-
-pub mod column;
-pub mod data_type;
+use crate::database::column::Column;
 
 pub struct Table {
     pub rows: u64,

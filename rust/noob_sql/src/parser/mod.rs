@@ -1,14 +1,13 @@
+use crate::database::Database;
+use crate::database::{column::Column, data_type::DataType, table::Table};
 use crate::lexer::{
-    tokens::{keyword_token::Keyword, TokenVariant},
+    tokens::{keyword_token::Keyword, punctuator_token::Punctuator, TokenVariant},
     Lexer,
-};
-use crate::{
-    lexer::tokens::punctuator_token::Punctuator,
-    table::{column::Column, data_type::DataType, Table},
 };
 use nodes::NodeVariant;
 
 pub mod _error;
+#[cfg(test)]
 mod _tests;
 pub mod nodes;
 
@@ -34,7 +33,23 @@ impl Parser<'_> {
     }
 
     pub fn parse_create_statement(&mut self) -> Result<NodeVariant> {
-        self.consume_keyword(Keyword::Table)?;
+        let keyword = self.read_keyword()?;
+        match keyword {
+            Keyword::Database => self.parse_create_database_statement(),
+            Keyword::Table => self.parse_create_table_statement(),
+            _ => Err(Error::Syntax(
+                "Expected create database or table statement".to_string(),
+            )),
+        }
+    }
+
+    pub fn parse_create_database_statement(&mut self) -> Result<NodeVariant> {
+        let name = self.read_identifier()?;
+        self.consume_punctuator(Punctuator::Semicolon)?;
+        Ok(NodeVariant::DatabaseDefinition(Database { name }))
+    }
+
+    pub fn parse_create_table_statement(&mut self) -> Result<NodeVariant> {
         let table_name = self.read_identifier()?;
         self.consume_punctuator(Punctuator::ParenOpen)?;
 
@@ -139,15 +154,6 @@ impl Parser<'_> {
         match punctuator == expected {
             true => Ok(()),
             false => Err(Error::Syntax(format!("Expected punctuator {}", expected))),
-        }
-    }
-
-    fn consume_keyword(&mut self, expected: Keyword) -> Result<()> {
-        let keyword = self.read_keyword()?;
-
-        match keyword == expected {
-            true => Ok(()),
-            false => Err(Error::Syntax(format!("Expected keyword {}", expected))),
         }
     }
 }

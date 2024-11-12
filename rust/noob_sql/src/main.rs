@@ -1,8 +1,9 @@
+#![allow(dead_code)]
+
+mod database;
 mod lexer;
 mod parser;
-mod table;
 
-use lexer::tokens::{Token, TokenVariant};
 use lexer::Lexer;
 use parser::Parser;
 

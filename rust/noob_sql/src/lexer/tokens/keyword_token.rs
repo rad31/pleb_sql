@@ -13,6 +13,7 @@ impl KeywordToken {
     pub fn get_map() -> HashMap<&'static str, Keyword> {
         [
             (CREATE, Keyword::Create),
+            (DATABASE, Keyword::Database),
             (TABLE, Keyword::Table),
             (PRIMARY, Keyword::Primary),
             (FOREIGN, Keyword::Foreign),
@@ -51,6 +52,7 @@ impl Token for KeywordToken {
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Keyword {
     Create,
+    Database,
     Table,
     Primary,
     Foreign,
@@ -75,6 +77,7 @@ impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let value = match self {
             Keyword::Create => CREATE,
+            Keyword::Database => DATABASE,
             Keyword::Table => TABLE,
             Keyword::Primary => PRIMARY,
             Keyword::Foreign => FOREIGN,
@@ -99,6 +102,7 @@ impl std::fmt::Display for Keyword {
 }
 
 pub const CREATE: &str = "create";
+pub const DATABASE: &str = "database";
 pub const TABLE: &str = "table";
 pub const PRIMARY: &str = "primary";
 pub const FOREIGN: &str = "foreign";

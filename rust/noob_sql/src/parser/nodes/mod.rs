@@ -1,8 +1,7 @@
-use crate::table::Table;
-
-pub mod table_definition_node;
+use crate::{database::table::Table, database::Database};
 
 pub enum NodeVariant {
+    DatabaseDefinition(Database),
     TableDefinition(Table),
 }
 
