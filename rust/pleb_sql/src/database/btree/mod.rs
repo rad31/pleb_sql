@@ -1,9 +1,9 @@
-use std::mem::transmute;
-
 use super::page_size::PageSize;
 
 #[cfg(test)]
 mod _tests;
+
+const MIN_ITEM_BYTES: usize = 1 + size_of::<u64>();
 
 pub struct BTree {
     num_items: u64,
@@ -12,6 +12,7 @@ pub struct BTree {
     height: u32,
     page_size: u32,
     data: Vec<u8>,
+    child_blocks: Vec<u32>,
 }
 
 impl BTree {
@@ -29,6 +30,8 @@ impl BTree {
             page_size,
             height: 0,
             data: vec![0; page_size as usize],
+            // child_blocks is the size of the max number of items per page
+            child_blocks: vec![0; (page_size as usize) / MIN_ITEM_BYTES],
         }
     }
 
@@ -58,7 +61,7 @@ impl BTree {
             let item_bytes = self.item_bytes as usize;
             let mut i = 0;
             loop {
-                let key = self.data[i..i + 8].get_key();
+                let key = self.data[i..(i + 8)].get_key();
                 // item is largest in page, put at end
                 if key == 0 {
                     self.data[i..i + item_bytes].copy_from_slice(record);
@@ -68,13 +71,13 @@ impl BTree {
                 if record_key <= key {
                     let mut j = i;
 
-                    while self.data[j..j + 8].get_key() != 0 {
+                    while self.data[j..(j + 8)].get_key() != 0 {
                         j += item_bytes;
                     }
 
                     let temp = self.data[i..j].to_vec();
-                    self.data[i..i + item_bytes].copy_from_slice(record);
-                    self.data[i + item_bytes..j + item_bytes].copy_from_slice(&temp);
+                    self.data[i..(i + item_bytes)].copy_from_slice(record);
+                    self.data[(i + item_bytes)..(j + item_bytes)].copy_from_slice(&temp);
 
                     break;
                 }

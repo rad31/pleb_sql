@@ -13,11 +13,11 @@ fn btree_height_0() {
     btree.insert(&record);
     println!("{}", btree);
 
-    let record = (3 as u64).to_le_bytes();
+    let record = (4 as u64).to_le_bytes();
     btree.insert(&record);
     println!("{}", btree);
 
-    let record = (4 as u64).to_le_bytes();
+    let record = (3 as u64).to_le_bytes();
     btree.insert(&record);
     println!("{}", btree);
 }
